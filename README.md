@@ -25,6 +25,8 @@
 2. 等待重启之后，用网线连接你的电脑和路由器
 3. 打开路由器管理界面`192.168.1.1`，账号是 `root`，密码是 `password`
 4. 因为现在很多家庭的光猫默认 IP 也是 `192.168.1.1`，所以我们需要把 NOKIA EA0326GMP 的 IP 改成 `192.168.2.1`，如下图所示：
+![edit-lan-ip-button](assets/edit-lan-ip-button.png)
+![edit-lan-ip-content](assets/edit-lan-ip-content.png)
 
 
 ### 第二步：修改默认的软件源
