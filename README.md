@@ -46,11 +46,16 @@ src/gz immortalwrt_routing https://mirrors.cernet.edu.cn/immortalwrt/releases/21
 src/gz immortalwrt_telephony https://mirrors.cernet.edu.cn/immortalwrt/releases/21.02-SNAPSHOT/packages/aarch64_cortex-a53/telephony
 ```
 
+![edit-software-repo-button](assets/edit-software-repo-button.png)
+![edit-software-repo-content](assets/edit-software-repo-content.png)
+
 ### 第三步：安装 OpenClash
 
 > 注：如果你有需求可以自行安装 openclash 最新版本 https://github.com/vernesong/OpenClash/releases
 
 上传本文提供的 ipk 文件，不出意外应该能安装成功，这里需要注意，这个固件安装成功之后不会立刻出现在左侧的服务栏下面，建议你直接重启路由器，然后重新登录，到服务栏里面找一下。
+
+![upload-openclash.png](assets/upload-openclash.png)
 
 ### 第四步：配置 openclash 
 
@@ -62,6 +67,10 @@ src/gz immortalwrt_telephony https://mirrors.cernet.edu.cn/immortalwrt/releases/
 
 此时你只需要去修改 Github cdn 即可，如下图：
 
+![edit-github-cdn.png](assets/edit-github-cdn.png)
+
 ### 第四步：配置 openclash 
 
 重新刷新订阅/或者尝试手动启动，完全按照以上步骤就可以完美启动。
+
+![final-success.png](assets/final-success.png)
