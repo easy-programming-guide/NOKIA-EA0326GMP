@@ -13,7 +13,7 @@
 - NOKIA EA0326GMP 已经刷好 uboot 固件，并且已经安装好 `ssh` 服务，关于这一步请移步恩山论坛或者其他大神，这里就不再赘述了。
 
 
-## 本教程提供的和步骤最后一次验证的日期是 2024-07-19
+## 本教程提供的和步骤最后一次验证的日期是 2024-07-21
 
 
 ## 教程步骤
@@ -35,18 +35,39 @@
 
 原文地址：https://help.mirrors.cernet.edu.cn/immortalwrt/
 
+原文应该如下：
+
+```conf
+src/gz immortalwrt_base https://downloads.immortalwrt.org/releases/21.02-SNAPSHOT/packages/aarch64_cortex-a53/base
+src/gz immortalwrt_luci https://downloads.immortalwrt.org/releases/21.02-SNAPSHOT/packages/aarch64_cortex-a53/luci
+src/gz immortalwrt_packages https://downloads.immortalwrt.org/releases/21.02-SNAPSHOT/packages/aarch64_cortex-a53/packages
+src/gz immortalwrt_routing https://downloads.immortalwrt.org/releases/21.02-SNAPSHOT/packages/aarch64_cortex-a53/routing
+src/gz immortalwrt_telephony https://downloads.immortalwrt.org/releases/21.02-SNAPSHOT/packages/aarch64_cortex-a53/telephony
+```
+
+ downloads.immortalwrt.org 
+
+ mirror.sjtu.edu.cn/immortalwrt
+
 将源改写为如下内容
 
 ```conf
 src/gz immortalwrt_base https://mirrors.cernet.edu.cn/immortalwrt/releases/21.02-SNAPSHOT/packages/aarch64_cortex-a53/base
-src/gz immortalwrt_helloworld https://mirrors.cernet.edu.cn/immortalwrt/releases/21.02-SNAPSHOT/packages/aarch64_cortex-a53/helloworld
-src/gz immortalwrt_kenzo https://mirrors.cernet.edu.cn/immortalwrt/releases/21.02-SNAPSHOT/packages/aarch64_cortex-a53/kenzo
 src/gz immortalwrt_luci https://mirrors.cernet.edu.cn/immortalwrt/releases/21.02-SNAPSHOT/packages/aarch64_cortex-a53/luci
 src/gz immortalwrt_packages https://mirrors.cernet.edu.cn/immortalwrt/releases/21.02-SNAPSHOT/packages/aarch64_cortex-a53/packages
-src/gz immortalwrt_passwall https://mirrors.cernet.edu.cn/immortalwrt/releases/21.02-SNAPSHOT/packages/aarch64_cortex-a53/passwall
 src/gz immortalwrt_routing https://mirrors.cernet.edu.cn/immortalwrt/releases/21.02-SNAPSHOT/packages/aarch64_cortex-a53/routing
 src/gz immortalwrt_telephony https://mirrors.cernet.edu.cn/immortalwrt/releases/21.02-SNAPSHOT/packages/aarch64_cortex-a53/telephony
 ```
+或者
+```conf
+src/gz immortalwrt_base https://mirror.sjtu.edu.cn/immortalwrt/releases/21.02-SNAPSHOT/packages/aarch64_cortex-a53/base
+src/gz immortalwrt_luci https://mirror.sjtu.edu.cn/immortalwrt/releases/21.02-SNAPSHOT/packages/aarch64_cortex-a53/luci
+src/gz immortalwrt_packages https://mirror.sjtu.edu.cn/immortalwrt/releases/21.02-SNAPSHOT/packages/aarch64_cortex-a53/packages
+src/gz immortalwrt_routing https:/mirror.sjtu.edu.cn/immortalwrt/releases/21.02-SNAPSHOT/packages/aarch64_cortex-a53/routing
+src/gz immortalwrt_telephony https://mirror.sjtu.edu.cn/immortalwrt/releases/21.02-SNAPSHOT/packages/aarch64_cortex-a53/telephony
+```
+
+
 
 ![edit-software-repo-button](assets/edit-software-repo-button.png)
 ![edit-software-repo-content](assets/edit-software-repo-content.png)
@@ -186,6 +207,12 @@ src/gz immortalwrt_telephony https://mirrors.cernet.edu.cn/immortalwrt/releases/
 ### 第四步：安装 OpenClash
 
 > 注：如果你有需求可以自行安装 openclash 最新版本 https://github.com/vernesong/OpenClash/releases
+
+
+```sh
+opkg update
+opkg install coreutils-nohup bash iptables dnsmasq-full curl ca-certificates ipset ip-full iptables-mod-tproxy iptables-mod-extra libcap libcap-bin ruby ruby-yaml kmod-tun kmod-inet-diag unzip luci-compat luci luci-base
+```
 
 上传本文提供的 ipk 文件，不出意外应该能安装成功，这里需要注意，这个固件安装成功之后不会立刻出现在左侧的服务栏下面，建议你直接重启路由器，然后重新登录，到服务栏里面找一下。
 
