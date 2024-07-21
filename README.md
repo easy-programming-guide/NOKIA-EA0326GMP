@@ -266,12 +266,21 @@ src/gz immortalwrt_telephony https://mirrors.cernet.edu.cn/immortalwrt/releases/
     - 副路由（其实此时它已经被定位为旁路有）的连接方式由采取的是主路由的 LAN 对 副路由的LAN 口，把副路由变成一台交换机就好，并且关闭 DHCP，完全将网络的配置叫给主路由这个指挥官，自己就做好科学上网的网关就好。注意此时**不可以使用无线桥接或者无线中继的方式连接主副两个路由器，因为旁路由不可以使用无线连接进入主路由，这是无线模块的设计本身就不具备这个功能，跟有线连接有本质区别，不信你试试，我反正从来没成功过，旁路由模式下，它必须有线连接主路由**
     - 所有加入到网络的客户端设备，电脑，手机都不需要再自己手动设定网关和 DND，OpenWrt 可以集中来配置，这就解决了网上很流行的旁路网关的一个缺点：每一台设备要自己主动设置自己的网关指向旁路由。
 
+    假设我要实现的需求如下：
 
-    那么怎么来设置呢？
+    | 网段 | 作用 | 网关 | DNS | 解释 |
+    | --- | --- | --- | --- | --- |
+    | 192.168.1.2 ~ 192.168.1.10 |  预留给所有旁路由，也就是这个网段内的每一个 IP 对应的就是一个旁路由器 | 192.168.1.1 | 192.168.1.1 | 每一个子路由的网关和 DNS 必须是上一级路由的 IP |
+    | 192.168.1.11 ~ 192.168.1.50 |  你自己打算直连顶层路由的客户端并且希望能使用旁路由网关的手机或者电脑| 192.168.1.2 | 192.168.1.2 | 预留 50 个位置应该足够 |
+    | 192.168.1.51 ~ 192.168.1.150 |  这里预留给家里的智能家电，摄像头等完全不需要科学上网的设备，网关和 DNS 都是主路由的 IP | 192.168.1.1 | 192.168.1.1 | 他们都使用默认的主路由的 IP 作为网关 |
 
-    首先网上有教程，不过我在这里重复一遍。
+    首先需要去修改主路由的 lan 接口的配置，让主路由分配 IP 的时候从 192.168.1.51 开始到 192.168.1.250，
+    
+    ![dhcp-dynamic-range](assets/dhcp-dynamic-range.png)
 
-    首先 ssh 登录到你的主路由
+    如果你觉得 150 设备不够，你就继续加大数字，但是主要最大的 IP 不能超过 254，因为 255 是广播地址。
+
+    然后需要 ssh 连接到主路由
 
     ```sh
     ssh root@192.168.1.1
@@ -282,25 +291,32 @@ src/gz immortalwrt_telephony https://mirrors.cernet.edu.cn/immortalwrt/releases/
     vim /etc/dnsmasq.conf
     ```
 
-    添加如下内容
+    添加如下内容：
 
     ```conf
-    dhcp-range=set:OpenClash,192.168.100.10,192.168.100.50
-    dhcp-option=tag:OpenClash,option:dns-server,192.168.2.1
-    dhcp-option=tag:OpenClash,option:router,192.168.2.1
+    dhcp-range=set:specialrange,192.168.1.11,192.168.1.50
+    dhcp-option=tag:specialrange,option:router,192.168.1.2
+    dhcp-option=tag:specialrange,option:dns-server,192.168.1.2
     ```
+
     然后重启服务
 
     ```
     /etc/init.d/dnsmasq restart
     ```
 
+    最后你需要使用 openwrt 的 web 管理界面，进入网络-接口，点击添加，然后填写如下内容
+
+    ![dhcp-static-ip](assets/dhcp-static-ip.png)
+
+    如图设置的效果就是：这台 iPhone 的 IP 正好落在 192.168.1.11,192.168.1.50 范围内，那么 dnsmasq 就会为它指派网关和 DNS `192.168.1.2`，这样 iPhone 就可以使用旁路由的网关了。
+
     另外旁路由（副路由）还有一些设置
     
     防火墙配置
-      ①电脑自动获取到IP地址后，在浏览器输入之前修改后的旁路由IP地址，本文中是192.168.31.2，进入旁路由管理界面
+      ①电脑自动获取到IP地址后，在浏览器输入之前修改后的旁路由IP地址，本文中是192.168.1.2，进入旁路由管理界面
       ②依次找到网络-防火墙，在区域转发中，关闭SYN-flood防御，开启IP动态伪装，然后保存应用。
       ③防火墙自定义规则加入一条指令
-      指令：iptables -t nat -I POSTROUTING -o eth0 -j MASQUERADE
+      指令：`iptables -t nat -I POSTROUTING -o eth0 -j MASQUERADE`
       
     输入完成后，重启防火墙。
