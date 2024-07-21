@@ -280,6 +280,17 @@ src/gz immortalwrt_telephony https://mirrors.cernet.edu.cn/immortalwrt/releases/
 
     如果你觉得 150 设备不够，你就继续加大数字，但是主要最大的 IP 不能超过 254，因为 255 是广播地址。
 
+    然后需要给你的设备设置 Mac + IP + 标签 的绑定
+
+    openwrt 的 web 管理界面，进入网络-DHCP/DNS，点击添加，然后填写如下内容
+
+    ![dhcp-static-ip](assets/dhcp-static-ip.png)
+
+    如图设置的效果就是：这台 iPhone 的 IP 正好落在 192.168.1.11,192.168.1.50 范围内，注意最重要的标签，dnsmasq 是根据你设定的标签来指定网关和 DNS 的，所以这里要添加 2个标签 
+
+    - iPhone 15， 这个是给你自己之后管理起来方便记忆和标记的标签，可以随便起
+    - special，这个是给 dnsmasq 使用的，dnsmasq 会根据这个标签来指定网关和 DNS
+
     然后需要 ssh 连接到主路由
 
     ```sh
@@ -294,10 +305,11 @@ src/gz immortalwrt_telephony https://mirrors.cernet.edu.cn/immortalwrt/releases/
     添加如下内容：
 
     ```conf
-    dhcp-range=set:specialrange,192.168.1.11,192.168.1.50
-    dhcp-option=tag:specialrange,option:router,192.168.1.2
-    dhcp-option=tag:specialrange,option:dns-server,192.168.1.2
+    dhcp-option=tag:special,option:router,192.168.1.2
+    dhcp-option=tag:special,option:dns-server,192.168.1.2
     ```
+
+    注意 `special` 是你刚才设定的标签名。
 
     然后重启服务
 
@@ -305,11 +317,7 @@ src/gz immortalwrt_telephony https://mirrors.cernet.edu.cn/immortalwrt/releases/
     /etc/init.d/dnsmasq restart
     ```
 
-    最后你需要使用 openwrt 的 web 管理界面，进入网络-接口，点击添加，然后填写如下内容
-
-    ![dhcp-static-ip](assets/dhcp-static-ip.png)
-
-    如图设置的效果就是：这台 iPhone 的 IP 正好落在 192.168.1.11,192.168.1.50 范围内，那么 dnsmasq 就会为它指派网关和 DNS `192.168.1.2`，这样 iPhone 就可以使用旁路由的网关了。
+    以后，你还想新增设备能被分配旁路网关，那么你只需要跟上文一样，设置 Mac + IP + 标签绑定，并且一定要记得给设备添加 `special` 标签即可。
 
     另外旁路由（副路由）还有一些设置
     
