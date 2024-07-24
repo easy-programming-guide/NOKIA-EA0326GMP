@@ -1,75 +1,199 @@
 # NOKIA EA0326GMP + OpenClash 教程
 
+## 本教程最后一次验证的日期是 2024-07-24
+
 
 > 声明：本仓库仅用于个人学习研究，请勿将资料用于商业用途。
 
-
-## 前置准备
+## 前置准备 
 
 - 准备一台电脑，并安装好 `git`
 - 把本仓库克隆到本地，`git clone https://github.com/easy-programming-guide/NOKIA-EA0326GMP.git`
 - 一根网线
 - 一台 NOKIA EA0326GMP 路由器
-- NOKIA EA0326GMP 已经刷好 uboot 固件，并且已经安装好 `ssh` 服务，关于这一步请移步恩山论坛或者其他大神，这里就不再赘述了。
 
 
-## 本教程提供的和步骤最后一次验证的日期是 2024-07-21
+## 1. 打开 SSH - 如果你的路由器从未打开过 SSH，请一定操作这一步
+
+请按照如下步骤，先基于出厂的官方原版固件打开 SSH 就可以，然后就可以先刷入 uboot
+
+- git clone 本项目到本地
+- 用网线连接电脑和路由器的 LAN 口
+- 在浏览器输入 192.168.10.1 打开路由器的管理界面，密码就是你路由器
+- 在-系统管理-备份和恢复-选择文件-找到本项目中的 `EA0326GMP_SSH.tar.gz` 文件，点击恢复
+- 导入后设备会重启，大概3分钟左右后设备重启完成，可以通过ssh工具进入路由器后台
+
+## 2. 安装 uboot 上传到路由器
 
 
-## 教程步骤
+### 如果你是第一次安装 uboot
 
+- 打开 WinSCP 工具，在左边栏选择 `Scp` 协议，在右边栏输入路由器的 IP 地址，用户名 root，密码是空
+- 从 https://drive.wrt.moe/uboot/mediatek 下载最新版的 `mt7981-nokia-ea0326gmp-fip-expand.bin`，本项目里面也有一个备份，但是这个备份的版本可能不是最新的，建议下载最新版，理论上不会有问题
+- 把 `mt7981-nokia-ea0326gmp-fip-expand.bin` 上传到路由器的 `/tmp/` 目录
 
-### 第一步：刷入固件，修改默认 LAN 口 IP
+查看现有分区，执行 `cat /proc/mtd`，你大概会看到如下内容：
 
-1. 使用 uboot 把当前源码当中 `immortalwrt-mediatek-mt7981-nokia_ea0326gmp-squashfs-factory.bin` 刷入路由器
-2. 等待重启之后，用网线连接你的电脑和路由器
-3. 打开路由器管理界面`192.168.1.1`，账号是 `root`，密码是 `password`
-4. 因为现在很多家庭的光猫默认 IP 也是 `192.168.1.1`，所以我们需要把 NOKIA EA0326GMP 的 IP 改成 `192.168.2.1`，如下图所示：
-![edit-lan-ip-button](assets/edit-lan-ip-button.png)
-![edit-lan-ip-content](assets/edit-lan-ip-content.png)
+```
+cat /proc/mtd
 
-> 这里很重要，如果你的光猫跟你的 NOKIA EA0326GMP 局域网 IP 冲突了，后续连接互联网的时候会出问题，所以一定要把 NOKIA EA0326GMP 的 IP 改成 跟光猫的 IP 段不一样的，例如 `192.168.X.1`， X 不等于光猫的值即可。
-
-
-### 第二步：修改默认的软件源
-
-原文地址：https://help.mirrors.cernet.edu.cn/immortalwrt/
-
-原文应该如下：
-
-```conf
-src/gz immortalwrt_base https://downloads.immortalwrt.org/releases/21.02-SNAPSHOT/packages/aarch64_cortex-a53/base
-src/gz immortalwrt_luci https://downloads.immortalwrt.org/releases/21.02-SNAPSHOT/packages/aarch64_cortex-a53/luci
-src/gz immortalwrt_packages https://downloads.immortalwrt.org/releases/21.02-SNAPSHOT/packages/aarch64_cortex-a53/packages
-src/gz immortalwrt_routing https://downloads.immortalwrt.org/releases/21.02-SNAPSHOT/packages/aarch64_cortex-a53/routing
-src/gz immortalwrt_telephony https://downloads.immortalwrt.org/releases/21.02-SNAPSHOT/packages/aarch64_cortex-a53/telephony
+dev:    size   erasesize  name
+mtd0: 00100000 00020000 "bl2"
+mtd1: 00080000 00020000 "u-boot-env"
+mtd2: 00200000 00020000 "factory"
+mtd3: 00200000 00020000 "fip"
+mtd4: 00200000 00020000 "config"
+mtd5: 00200000 00020000 "config2"
+mtd6: 07680000 00020000 "ubi"
 ```
 
- downloads.immortalwrt.org 
+肉眼找到 `fip` 或者 `FIP` 分区，执行如下命令：
 
- mirror.sjtu.edu.cn/immortalwrt
+```sh
+mtd write /tmp/mt7981-nokia-ea0326gmp-fip-expand.bin fip 
+# 这里的 fip 大小写一定要跟你刚才肉眼看到的分区名字大小写一定要一致，否则后果自负
+```
 
-将源改写为如下内容
+### 如果你已经安装过别的版本的 uboot
+
+### 解锁分区
+
+查看现有分区，执行 `cat /proc/mtd`，你大概会看到如下内容：
+
+```
+cat /proc/mtd
+
+dev:    size   erasesize  name
+mtd0: 00100000 00020000 "bl2"
+mtd1: 00080000 00020000 "u-boot-env"
+mtd2: 00200000 00020000 "factory"
+mtd3: 00200000 00020000 "fip"
+mtd4: 00200000 00020000 "config"
+mtd5: 00200000 00020000 "config2"
+mtd6: 07680000 00020000 "ubi"
+```
+
+肉眼找到 `fip` 或者 `FIP` 分区，然后安装 `kmod-mtd-rw` 工具，执行如下命令：
+
+```sh
+opkg install kmod-mtd-rw
+```
+
+接着执行解锁
+
+```sh
+insmod mtd-rw i_want_a_brick=1
+```
+
+再用 WinScp 把 uboot 拖入 /tmp/ 目录，执行
+
+```sh
+mtd erase u-boot-env
+mtd write /tmp/mt7981-nokia-ea0326gmp-fip-expand.bin fip
+# 这里的 fip 大小写一定要跟你刚才肉眼看到的分区名字大小写一定要一致，否则后果自负
+```
+
+**所以这是一个互相操作的方法，你如果哪天想用回官方原版的固件，你也可以把 immortalwrt 和 openwrt 的 uboot 用这种方式刷回来，这就可以实现 uboot 自由切换了。**
+
+## 固件的选择
+
+这是另外一个需要血和泪探索的过程，Nokia EA0326GMP 固件的选择，我尝试了如下几种：
+
+- [openwrt snapshott 21.02-SNAPSHOT](https://downloads.openwrt.org/snapshots/targets/mediatek/filogic/openwrt-mediatek-filogic-nokia_ea0326gmp-squashfs-sysupgrade.itb) -  需要重新刷回 openwrt 的 uboot
+- [https://firmware-selector.immortalwrt.org/?version=SNAPSHOT&target=mediatek%2Ffilogic&id=nokia_ea0326gmp](https://firmware-selector.immortalwrt.org/?version=SNAPSHOT&target=mediatek%2Ffilogic&id=nokia_ea0326gmp) - 需要重新刷回 immortalwrt 的 uboot
+- [https://openwrt.ai/?target=mediatek%2Ffilogic&id=nokia_ea0326gmp](https://openwrt.ai/?target=mediatek%2Ffilogic&id=nokia_ea0326gmp) - 用本文前面推荐的 从 https://drive.wrt.moe/uboot/mediatek 下载最新版的 `mt7981-nokia-ea0326gmp-fip-expand.bin` 就可以刷入
+
+
+最后我良心建议用 https://openwrt.ai/ 自己编译，因为 openclash 依赖内核的几个组件，如果不一起打包编译，后期根本装不上，哪怕装上了，也有功能异常，甚至崩溃无法启动。
+
+
+**因此本文后面的教程都是基于  https://openwrt.ai/  编译的固件，其他固件请酌情参考类似的步骤，但是不保证镜像操作之后的结果能完美运行 OpenClash**
+
+### 编译固件
+
+首先请注册 https://openwrt.ai/ 账号，然后按照如下步骤编译固件
+
+![openwrt.ai](assets/openwrt-ai-build-firmware.png)
+
+建议把
+- kmod-tun
+- kmod-ipt-nat
+
+这俩是必须安装的，否则 OpenClash 无法正常工作，我尝试过很多次，最后发现这俩是，他们是依赖内核的版本而 OpenClash 又依赖他们俩，所以是必须安装的。
+
+然后下面的互联网选项也要把 OpenClash 勾选上，其他选项默认就好，Nokia EA0326GMP 的内存只有 256 mb 而且硬盘存储更小，切勿贪多。
+
+然后就可以编译固件了，免费用户每天编译一次，良心建议 28 块钱，请别人喝一次咖啡，真心不贵。
+
+如果你懒，或者此刻你已经断网了，那就先用本仓库提供的 `openwrt-07.23.2024-mediatek-filogic-nokia_ea0326gmp-squashfs-sysupgrade.bin` 做一个跳板，如果这个固件你不满意，后面你就可以自己编译了。
+
+## 进入 uboot 界面
+
+从 https://drive.wrt.moe/uboot/mediatek 下载最新版的 `mt7981-nokia-ea0326gmp-fip-expand.bin` 的 uboot 进入方式如下
+
+- 关机拔掉电源
+- 用牙签顶住黑色的 reset 键，然后插上电源，然后开机
+- 等待 5 秒后，电源灯会闪烁三下，第三下闪烁之后，松开 reset 键，按住时间太长或者太短都无法进入 uboot，请注意观察电源灯闪烁
+- 回到电脑输入 192.168.1.1，就可以看见 uboot 的界面了，从此以后你随便刷，变砖算我的。
+
+## 开刷
+
+这一步不用多说，选择固件，点击 upgrade 即可。
+
+
+## 初始化路由器
+
+等待路由器第一次刷完，重启之后，浏览器进入 10.0.0.1，账号 root，密码 root
+
+
+
+### 第一步：修改默认的软件源
+
+先看固件自带的软件源，如下图
+
+![alt text](assets/edit-software-repo-button.png)
+
+```
+src/gz openwrt_core https://dl.openwrt.ai/23.05/targets/mediatek/filogic/6.6.41
+src/gz openwrt_base https://dl.openwrt.ai/23.05/packages/aarch64_cortex-a53/base
+src/gz openwrt_packages https://dl.openwrt.ai/23.05/packages/aarch64_cortex-a53/packages
+src/gz openwrt_luci https://dl.openwrt.ai/23.05/packages/aarch64_cortex-a53/luci
+src/gz openwrt_routing https://dl.openwrt.ai/23.05/packages/aarch64_cortex-a53/routing
+src/gz openwrt_kiddin9 https://dl.openwrt.ai/23.05/packages/aarch64_cortex-a53/kiddin9
+```
+
+目前能找到的 23.05 版本软件源是，固件包里面的是 `https://downloads.openwrt.org/releases/packages-23.05/aarch64_cortex-a53/`
+
+如下
+
+```
+File Name	File Size	Date
+base/	-	Mon Jul 22 17:46:20 2024
+luci/	-	Mon Jul 22 17:46:20 2024
+packages/	-	Mon Jul 22 17:46:20 2024
+routing/	-	Mon Jul 22 17:46:20 2024
+telephony/	-	Mon Jul 22 17:46:20 2024
+feeds.conf	0.4 KB	Mon Jul 22 17:46:15 2024
+```
+
 
 ```conf
-src/gz immortalwrt_base https://mirrors.cernet.edu.cn/immortalwrt/releases/21.02-SNAPSHOT/packages/aarch64_cortex-a53/base
-src/gz immortalwrt_luci https://mirrors.cernet.edu.cn/immortalwrt/releases/21.02-SNAPSHOT/packages/aarch64_cortex-a53/luci
-src/gz immortalwrt_packages https://mirrors.cernet.edu.cn/immortalwrt/releases/21.02-SNAPSHOT/packages/aarch64_cortex-a53/packages
-src/gz immortalwrt_routing https://mirrors.cernet.edu.cn/immortalwrt/releases/21.02-SNAPSHOT/packages/aarch64_cortex-a53/routing
-src/gz immortalwrt_telephony https://mirrors.cernet.edu.cn/immortalwrt/releases/21.02-SNAPSHOT/packages/aarch64_cortex-a53/telephony
+src/gz openwrt_base https://downloads.openwrt.org/releases/packages-23.05/aarch64_cortex-a53/base
+src/gz openwrt_packages https://downloads.openwrt.org/releases/packages-23.05/aarch64_cortex-a53/packages
+src/gz openwrt_luci https://downloads.openwrt.org/releases/packages-23.05/aarch64_cortex-a53/luci
+src/gz openwrt_routing https://downloads.openwrt.org/releases/packages-23.05/aarch64_cortex-a53/routing
+src/gz openwrt_kiddin9 https://downloads.openwrt.org/releases/packages-23.05/aarch64_cortex-a53/telephony
 ```
 或者
+
 ```conf
-src/gz immortalwrt_base https://mirror.sjtu.edu.cn/immortalwrt/releases/21.02-SNAPSHOT/packages/aarch64_cortex-a53/base
-src/gz immortalwrt_luci https://mirror.sjtu.edu.cn/immortalwrt/releases/21.02-SNAPSHOT/packages/aarch64_cortex-a53/luci
-src/gz immortalwrt_packages https://mirror.sjtu.edu.cn/immortalwrt/releases/21.02-SNAPSHOT/packages/aarch64_cortex-a53/packages
-src/gz immortalwrt_routing https:/mirror.sjtu.edu.cn/immortalwrt/releases/21.02-SNAPSHOT/packages/aarch64_cortex-a53/routing
-src/gz immortalwrt_telephony https://mirror.sjtu.edu.cn/immortalwrt/releases/21.02-SNAPSHOT/packages/aarch64_cortex-a53/telephony
+src/gz openwrt_base https://mirror-03.infra.openwrt.org/releases/23.05.4/packages/aarch64_cortex-a53/base
+src/gz openwrt_packages https://mirror-03.infra.openwrt.org/releases/23.05.4/packages/aarch64_cortex-a53/packages
+src/gz openwrt_luci https://mirror-03.infra.openwrt.org/releases/23.05.4/packages/aarch64_cortex-a53/luci
+src/gz openwrt_routing https://mirror-03.infra.openwrt.org/releases/23.05.4/packages/aarch64_cortex-a53/routing
+src/gz openwrt_telephony https://mirror-03.infra.openwrt.org/releases/23.05.4/packages/aarch64_cortex-a53/telephony
 ```
 
-
-
-![edit-software-repo-button](assets/edit-software-repo-button.png)
 ![edit-software-repo-content](assets/edit-software-repo-content.png)
 
 ### 第三步：让 NOKIA EA0326GMP 连上互联网
@@ -116,7 +240,7 @@ src/gz immortalwrt_telephony https://mirror.sjtu.edu.cn/immortalwrt/releases/21.
 所以根据上面的逻辑分析，网上有各种名词
 
 - WISP： 相当于路由器的WAN口接上级路由器的LAN口。路由器的DHCP不用关闭，网段跟上级不同。本路由器所接设备与上级IP网段不同。**这就是无线桥接**
-- AP： AP(接入点)模式下，只需要把一根可以上网的网线插在路由器上，无需任何配置就可以通过有线和无线上网了；在此模式下，该设备相当于一台无线HUB，可实现无线之间、无线到有线、无线到广域网络的访问。说到底就相当于一台拥有无线功能的交换机。**这就是无线中继**
+- AP： AP(接入点)模式下，只需要把一根可以上网的网线插在路由器的 LAN 口上，无需任何配置就可以通过让连接到这台副路由的设备有线和无线上网了；在此模式下，该设备相当于一台无线 Hub，可实现无线之间、无线到有线、无线到广域网络的访问。说到底就相当于一台拥有无线功能的交换机。**这就是无线中继**
 - Repeater（中继）模式：Repeater（中继）模式下，路由器会通过无线的方式与一台可以上网的无线路由器建立连接，用来放大可以上网的无线路由器上的无线信号，注意：放大后的无线信号的名称和原来的无线路由器的无线信号名称一致。**这就是无线中继**
 - Bridge（桥接）模式： Bridge（桥接）模式，路由器会通过无线的方式与一台可以上网的无线路由器建立连接，用来放大可以上网的无线路由器上的无线信号；注意：放大后的无线信号的名称和原来的无线路由器的无线信号名称不一样。**这就是无线桥接**
 
